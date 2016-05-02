@@ -66,12 +66,25 @@ namespace SpaceNavigatorDriver {
 				StraightenHorizon();
 			_wasHorizonLocked = Settings.LockHorizon;
 
-			// Return if device is idle.
-			if (SpaceNavigator.Translation == Vector3.zero &&
+            //Cam Settings
+            if (Settings.CamOrthographic != CameraOrthographic.Unchanged)
+                ChangeOrthographic(sceneView);
+
+            if (Settings.CamPreset != CameraPreset.Free)
+            {
+                ChangeToCameraPreset(sceneView);
+            }
+
+            // Return if device is idle.
+            if (SpaceNavigator.Translation == Vector3.zero &&
 				SpaceNavigator.Rotation == Quaternion.identity) {
 				_wasIdle = true;
 				return;
-			}
+            }
+            else
+            {
+                Settings.CamPreset = CameraPreset.Free;
+            }
 
 			switch (Settings.Mode) {
 				case OperationMode.Fly:
@@ -317,6 +330,56 @@ namespace SpaceNavigatorDriver {
 				Mathf.RoundToInt(v.y / snap) * snap,
 				Mathf.RoundToInt(v.z / snap) * snap);
 		}
-		#endregion - Snapping -
-	}
+        #endregion - Snapping -
+
+        #region - Camera Positions -
+
+        static void ChangeOrthographic(SceneView sceneView)
+        {
+            if(Settings.CamOrthographic == CameraOrthographic.Switch)
+            {
+                sceneView.orthographic = !sceneView.orthographic;
+            }
+            Settings.CamOrthographic = CameraOrthographic.Unchanged;
+            
+        }
+
+        static void ChangeToCameraPreset(SceneView sceneView)
+        {
+            switch (Settings.CamPreset)
+            {
+                case CameraPreset.Free:
+                    break;
+                case CameraPreset.Top:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.down));
+                    break;
+                case CameraPreset.Bottom:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.up));
+                    break;
+                case CameraPreset.Front:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.back));
+                    break;
+                case CameraPreset.Back:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.forward));
+                    break;
+                case CameraPreset.Left:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.right));
+                    break;
+                case CameraPreset.Right:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.left));
+                    break;
+                case CameraPreset.Iso:
+                    sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(new Vector3(-1,-1,-1)));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            Settings.CamPreset = CameraPreset.Free;
+        }
+        //static void MoveCameraToPosition(SceneView sceneView, Vector3 translationInversion, Vector3 rotationInversion)
+       // {
+       //     sceneView.LookAt(sceneView.pivot, Quaternion.LookRotation(Vector3.forward));
+       // }
+        #endregion - Camera Positions -
+    }
 }

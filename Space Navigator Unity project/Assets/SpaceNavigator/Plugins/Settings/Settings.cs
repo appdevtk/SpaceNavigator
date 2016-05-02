@@ -11,8 +11,10 @@ namespace SpaceNavigatorDriver {
 	public enum CoordinateSystem { Camera, World, Parent, Local }
 	public enum Axis { X, Y, Z }
 	public enum DoF { Translation, Rotation }
+    public enum CameraPreset { Free, Top, Bottom, Front, Back, Left, Right, Iso }
+    public enum CameraOrthographic { Unchanged, Switch }
 
-	[Serializable]
+    [Serializable]
 	public static class Settings {
 		[SerializeField]
 		public static OperationMode Mode;
@@ -76,6 +78,10 @@ namespace SpaceNavigatorDriver {
 		public static Vector3 GrabMoveInvertTranslation, GrabMoveInvertRotation;
 
 		private static Vector2 _scrollPos;
+
+        // Camera Position
+        public static CameraPreset CamPreset;
+        public static CameraOrthographic CamOrthographic;
 
 		static Settings() {
 			//Debug.Log("New Settings()");
@@ -312,18 +318,18 @@ namespace SpaceNavigatorDriver {
 				}
 			}
 			GUILayout.EndHorizontal();
-			#endregion - Axes inversion per mode -
+            #endregion - Axes inversion per mode -
 
-			#region - Dead Zone -
+            #region - Dead Zone -
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
 		GUILayout.BeginVertical();
 		GUILayout.Label("Dead Zone");
 		GUILayout.Space(4);
 
 
-			#region - Translation + rotation -
+            #region - Translation + rotation -
 		GUILayout.BeginVertical();
-			#region - Translation -
+            #region - Translation -
 		GUILayout.BeginHorizontal();
 		GUILayout.Label("Translation", GUILayout.Width(67));
 		TransDead = EditorGUILayout.FloatField(TransDead, GUILayout.Width(30));
@@ -331,9 +337,9 @@ namespace SpaceNavigatorDriver {
 		TransDead = GUILayout.HorizontalSlider(TransDead, TransDeadMin, TransDeadMax);
 		TransDeadMax = EditorGUILayout.FloatField(TransDeadMax, GUILayout.Width(30));
 		GUILayout.EndHorizontal();
-			#endregion - Translation -
+            #endregion - Translation -
 
-			#region - Rotation -
+            #region - Rotation -
 		GUILayout.BeginHorizontal();
 		GUILayout.Label("Rotation", GUILayout.Width(67));
 		RotDead = EditorGUILayout.FloatField(RotDead, GUILayout.Width(30));
@@ -341,15 +347,37 @@ namespace SpaceNavigatorDriver {
 		RotDead = GUILayout.HorizontalSlider(RotDead, RotDeadMin, RotDeadMax);
 		RotDeadMax = EditorGUILayout.FloatField(RotDeadMax, GUILayout.Width(30));
 		GUILayout.EndHorizontal();
-			#endregion - Rotation -
+            #endregion - Rotation -
 		GUILayout.EndVertical();
-			#endregion - Translation + rotation -
+            #endregion - Translation + rotation -
 
 		GUILayout.EndVertical();
 #endif
-			#endregion - Deadzone -
+            #endregion - Deadzone -
 
-			GUILayout.EndVertical();
+            #region - Camera preset -
+            GUILayout.Label("Camera Preset");
+            GUIContent[] camPresets = new[] {
+                new GUIContent("Free", ""),
+                new GUIContent("Top", ""),
+                new GUIContent("Bottom", ""),
+                new GUIContent("Front", ""),
+                new GUIContent("Back", ""),
+                new GUIContent("Left", ""),
+                new GUIContent("Right", ""),
+                new GUIContent("Iso", "")
+            };
+            CamPreset = (CameraPreset)GUILayout.SelectionGrid((int)CamPreset, camPresets, 8);
+
+            GUILayout.Label("Camera Perspective");
+            GUIContent[] camPersp = new[] {
+                new GUIContent("Unchanged", "Unchanged"),
+                new GUIContent("Switch", "Orthographic,Perspective")
+            };
+            CamOrthographic = (CameraOrthographic)GUILayout.SelectionGrid((int)CamOrthographic, camPersp, 2);
+            #endregion - Camera preset -
+
+            GUILayout.EndVertical();
 			GUILayout.EndScrollView();
 #endif
 		}
@@ -392,7 +420,11 @@ namespace SpaceNavigatorDriver {
 			WriteAxisInversions(OrbitInvertTranslation, OrbitInvertRotation, "Orbit");
 			WriteAxisInversions(TelekinesisInvertTranslation, TelekinesisInvertRotation, "Telekinesis");
 			WriteAxisInversions(GrabMoveInvertTranslation, GrabMoveInvertRotation, "Grab move");
-		}
+
+            // Camera preset
+            PlayerPrefs.SetInt("Camera preset", (int)CamPreset);
+            PlayerPrefs.SetInt("Camera orthographic", (int)CamOrthographic);
+        }
 
 		/// <summary>
 		/// Read settings from PlayerPrefs.
@@ -432,7 +464,11 @@ namespace SpaceNavigatorDriver {
 			ReadAxisInversions(ref OrbitInvertTranslation, ref OrbitInvertRotation, "Orbit");
 			ReadAxisInversions(ref TelekinesisInvertTranslation, ref TelekinesisInvertRotation, "Telekinesis");
 			ReadAxisInversions(ref GrabMoveInvertTranslation, ref GrabMoveInvertRotation, "Grab move");
-		}
+
+            // Camera preset
+            CamPreset = (CameraPreset)PlayerPrefs.GetInt("Camera preset", (int)CameraPreset.Free);
+            CamOrthographic = (CameraOrthographic)PlayerPrefs.GetInt("Camera orthographic", (int)CameraOrthographic.Unchanged);
+        }
 
 		/// <summary>
 		/// Utility function to write axis inversions to PlayerPrefs.
